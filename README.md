@@ -3,22 +3,38 @@
 A cryptocurrency trader for all famous exchanges.
 
 ## Supported Exchanges
-- [x] CHBTC
-- [x] yunbi
-- [x] viabtc
+
+### Exchange move
+* btc9 -> cex
+* chbtc -> exx, zb
+* btc38 -> aex
+* jubi -> coinegg
+* etcwin -> btc018
+* lhang -> lbank
+
+### Deprecated
+- [x] ~~yunbi~~
+- [x] ~~viabtc~~
+
+### China
+- [x] okcoin
 - [x] huobi
 - [x] binance
-- [x] btc9
-- [x] okcoin
+- [x] zb
+- [x] allcoin
+- [x] cex
+- [ ] exx
+- [ ] kucoin
+- [ ] bigone
+
+### Others
 - [x] bittrex
 - [x] liqui
 - [x] poloniex
-- [x] lhang
-- [x] jubi
-- [x] allcoin
 - [x] bitfinex
 - [x] coincheck
 - [x] bitflyer
+- [ ] etherdelta
 
 ## Data API
 - [x] etherscan
@@ -28,9 +44,7 @@ A cryptocurrency trader for all famous exchanges.
 
 ## utils
 - [x] trader: API test.
-- [x] monitor: Monitor market price and alter.
-- [x] arbitrage: arbitrage between exchanges.
-- [x] yunbimonitor: monitor yunbi api service.
+- [x] tradebot: best trade bot.
 
 ## Donation (捐款)
 * Donation will make me update this repo quicker, and as a way to support my work.
@@ -42,5 +56,5 @@ A cryptocurrency trader for all famous exchanges.
 * NEO: AU1jyMccQCzEnns2BaFcnDPB3W8JqEDYyQ
 
 ## Join us
-* 量投社: [Slack](https://join.slack.com/t/cryptotraderhub/shared_invite/MjM5MTU2MzY3MzQ2LTE1MDUxMzQ1MjYtYmI0NGNlZTQ4YQ) [Telegram Group](https://t.me/cryptotraderhub) [Telegram Channel](https://t.me/cryptotraderchannel)
+* 量投社: [Slack](https://join.slack.com/t/cryptotraderhub/shared_invite/MjM5MTU2MzY3MzQ2LTE1MDUxMzQ1MjYtYmI0NGNlZTQ4YQ) [Telegram Group](https://t.me/cryptotraderhub) [Telegram Channel](https://t.me/cryptotraderchannel) [Discord](https://discord.gg/ydBJspD)
 * 量投社: 讨论海外项目投资, 量化交易, 搬砖套利, 挖矿, 区块链技术.

@@ -1,5 +1,5 @@
-// Package chbtc CHBTC rest api package
-package chbtc
+// Package zb zb rest api package
+package zb
 
 import (
 	"crypto/hmac"
@@ -18,27 +18,29 @@ import (
 )
 
 const (
-	MarketAPI = "http://api.chbtc.com/data/v1/"
-	TradeAPI  = "https://trade.chbtc.com/api/"
+	MarketAPI = "http://api.zb.com/data/v1/"
+	TradeAPI  = "https://trade.zb.com/api/"
 )
 
-type CHBTC struct {
+// ZB API data
+type ZB struct {
 	AccessKey string
 	SecretKey string
 }
 
-func New(accessKey string, secretKey string) *CHBTC {
-	return &CHBTC{
+// New create new Zb API data
+func New(accessKey string, secretKey string) *ZB {
+	return &ZB{
 		AccessKey: accessKey,
 		SecretKey: secretKey,
 	}
 }
 
 // GetTicker 行情
-func (cb *CHBTC) GetTicker(base string, quote string) (*model.Ticker, error) {
+func (z *ZB) GetTicker(base string, quote string) (*model.Ticker, error) {
 	log.Debugf("Currency base: %s, quote: %s", base, quote)
 
-	url := MarketAPI + "ticker?currency=" + quote + "_" + base
+	url := MarketAPI + "ticker?market=" + quote + "_" + base
 
 	log.Debugf("Request url: %v", url)
 
@@ -109,7 +111,7 @@ func (cb *CHBTC) GetTicker(base string, quote string) (*model.Ticker, error) {
 //   * eth_cny: 可选 0.5, 0.3, 0.1
 //   * etc_cny: 可选 0.3, 0.1
 //   * bts_cny: 可选 1, 0.1
-func (cb *CHBTC) GetOrderBook(base string, quote string, size int, merge float64) (*model.OrderBook, error) {
+func (z *ZB) GetOrderBook(base string, quote string, size int, merge float64) (*model.OrderBook, error) {
 	url := MarketAPI + "depth?currency=" + quote + "_" + base + "&size=" + strconv.Itoa(size) + "&merge=" + strconv.FormatFloat(merge, 'f', -1, 64)
 
 	log.Debugf("Request url: %v", url)
@@ -127,13 +129,11 @@ func (cb *CHBTC) GetOrderBook(base string, quote string, size int, merge float64
 	log.Debugf("Response body: %v", string(body))
 
 	orderBook := &model.OrderBook{
-		Base:  base,
-		Quote: quote,
-		Time:  time.Unix(gjson.GetBytes(body, "timestamp").Int(), 0),
+		Time: time.Unix(gjson.GetBytes(body, "timestamp").Int(), 0),
 	}
 
 	gjson.GetBytes(body, "asks").ForEach(func(k, v gjson.Result) bool {
-		orderBook.Asks = append(orderBook.Asks, &model.Order{
+		orderBook.Asks = append(orderBook.Asks, model.MarketOrder{
 			Price:  v.Array()[0].Float(),
 			Amount: v.Array()[1].Float(),
 		})
@@ -142,7 +142,7 @@ func (cb *CHBTC) GetOrderBook(base string, quote string, size int, merge float64
 	})
 
 	gjson.GetBytes(body, "bids").ForEach(func(k, v gjson.Result) bool {
-		orderBook.Bids = append(orderBook.Bids, &model.Order{
+		orderBook.Bids = append(orderBook.Bids, model.MarketOrder{
 			Price:  v.Array()[0].Float(),
 			Amount: v.Array()[1].Float(),
 		})
@@ -162,7 +162,7 @@ func (cb *CHBTC) GetOrderBook(base string, quote string, size int, merge float64
 //   * etc_cny: ETC币/人民币
 //   * bts_cny: BTS币/人民币
 // * since: 从指定交易 ID 后 50 条数据
-func (cb *CHBTC) GetTrades(base string, quote string, since int) (*model.Trades, error) {
+func (z *ZB) GetTrades(base string, quote string, since int) (*model.Trades, error) {
 	url := MarketAPI + "trades?currency=" + quote + "_" + base
 	if since != 0 {
 		url += "&since=" + strconv.Itoa(since)
@@ -184,12 +184,11 @@ func (cb *CHBTC) GetTrades(base string, quote string, since int) (*model.Trades,
 
 	gjson.ParseBytes(body).ForEach(func(k, v gjson.Result) bool {
 		trade := &model.Trade{
-			Amount:    v.Get("amount").Float(),
-			Price:     v.Get("price").Float(),
-			Tid:       v.Get("tid").Int(),
-			TradeType: v.Get("trade_type").String(),
-			Type:      v.Get("type").String(),
-			Date:      time.Unix(v.Get("date").Int(), 0),
+			Amount: v.Get("amount").Float(),
+			Price:  v.Get("price").Float(),
+			ID:     v.Get("tid").Int(),
+			Type:   v.Get("type").String(),
+			Time:   time.Unix(v.Get("date").Int(), 0),
 		}
 		*trades = append(*trades, trade)
 		return true
@@ -222,7 +221,7 @@ func (cb *CHBTC) GetTrades(base string, quote string, since int) (*model.Trades,
 //   * 12hour: 12 小时
 // * since: 从这个时间戳之后的
 // * size: 返回数据的条数限制(默认为 1000, 如果返回数据多于 1000 条, 那么只返回 1000 条)
-func (cb *CHBTC) GetKline(base string, quote string, typ string, since int, size int) (*model.Kline, error) {
+func (z *ZB) GetRecords(base string, quote string, typ string, since int, size int) ([]model.Record, error) {
 	url := MarketAPI + "kline?currency=" + quote + "_" + base
 
 	if len(typ) != 0 {
@@ -249,38 +248,35 @@ func (cb *CHBTC) GetKline(base string, quote string, typ string, since int, size
 
 	log.Debugf("Response body: %v", string(body))
 
-	kline := new(model.Kline)
-
-	kline.MoneyType = gjson.GetBytes(body, "moneyType").String()
-	kline.Symbol = gjson.GetBytes(body, "symbol").String()
+	var records []model.Record
 
 	gjson.GetBytes(body, "data").ForEach(func(k, v gjson.Result) bool {
-		klinedata := &model.KlineData{
-			Time:   time.Unix(v.Array()[0].Int()/1000, 0),
-			Open:   v.Array()[1].Float(),
-			High:   v.Array()[2].Float(),
-			Low:    v.Array()[3].Float(),
-			Close:  v.Array()[4].Float(),
-			Amount: v.Array()[5].Float(),
+		record := model.Record{
+			Time:  time.Unix(v.Array()[0].Int()/1000, 0),
+			Open:  v.Array()[1].Float(),
+			High:  v.Array()[2].Float(),
+			Low:   v.Array()[3].Float(),
+			Close: v.Array()[4].Float(),
+			Vol:   v.Array()[5].Float(),
 		}
 
-		kline.Data = append(kline.Data, klinedata)
+		records = append(records, record)
 		return true
 	})
 
-	return kline, nil
+	return records, nil
 }
 
 // SecretDigest calc secert digest
-func (cb *CHBTC) SecretDigest() string {
+func (z *ZB) SecretDigest() string {
 	sha := sha1.New()
-	sha.Write([]byte(cb.SecretKey))
+	sha.Write([]byte(z.SecretKey))
 	return hex.EncodeToString(sha.Sum(nil))
 }
 
 // Sign calc sign string
-func (cb *CHBTC) Sign(uri string) string {
-	digest := cb.SecretDigest()
+func (z *ZB) Sign(uri string) string {
+	digest := z.SecretDigest()
 	mac := hmac.New(md5.New, []byte(digest))
 	mac.Write([]byte(uri))
 	return hex.EncodeToString(mac.Sum(nil))
@@ -293,11 +289,11 @@ func (cb *CHBTC) Sign(uri string) string {
 //   * ltc: LTC
 //   * eth: 以太币
 //   * etc: ETC币
-func (cb *CHBTC) GetUserAddress(currency string) (string, error) {
+func (z *ZB) GetUserAddress(currency string) (string, error) {
 	url := "method=getUserAddress"
-	url += "&accesskey=" + cb.AccessKey
+	url += "&accesskey=" + z.AccessKey
 	url += "&currency=" + currency
-	sign := cb.Sign(url)
+	sign := z.Sign(url)
 	url += "&sign=" + sign
 	url += "&reqTime=" + strconv.FormatInt(time.Now().UnixNano()/(int64(time.Millisecond)/int64(time.Nanosecond)), 10)
 
@@ -332,14 +328,14 @@ func (cb *CHBTC) GetUserAddress(currency string) (string, error) {
 //   * etc_cny: ETC币/人民币
 //   * bts_cny: BTS币/人民币
 // return 委托挂单号
-func (cb *CHBTC) PlaceOrder(price float64, amount float64, tradeType int, base string, quote string) (string, error) {
+func (z *ZB) PlaceOrder(price float64, amount float64, tradeType int, base string, quote string) (string, error) {
 	url := "method=order"
-	url += "&accesskey=" + cb.AccessKey
+	url += "&accesskey=" + z.AccessKey
 	url += "&price=" + strconv.FormatFloat(price, 'f', -1, 64)
 	url += "&amount=" + strconv.FormatFloat(amount, 'f', -1, 64)
 	url += "&tradeType=" + strconv.Itoa(tradeType)
 	url += "&currency=" + quote + "_" + base
-	sign := cb.Sign(url)
+	sign := z.Sign(url)
 	url += "&sign=" + sign
 	url += "&reqTime=" + strconv.FormatInt(time.Now().UnixNano()/(int64(time.Millisecond)/int64(time.Nanosecond)), 10)
 
@@ -375,12 +371,12 @@ func (cb *CHBTC) PlaceOrder(price float64, amount float64, tradeType int, base s
 //   * eth_cny: 以太币/人民币
 //   * etc_cny: ETC币/人民币
 //   * bts_cny: BTS币/人民币
-func (cb *CHBTC) CancelOrder(id string, base string, quote string) error {
+func (z *ZB) CancelOrder(id string, base string, quote string) error {
 	url := "method=cancelOrder"
-	url += "&accesskey=" + cb.AccessKey
+	url += "&accesskey=" + z.AccessKey
 	url += "&id=" + id
 	url += "&currency=" + quote + "_" + base
-	sign := cb.Sign(url)
+	sign := z.Sign(url)
 	url += "&sign=" + sign
 	url += "&reqTime=" + strconv.FormatInt(time.Now().UnixNano()/(int64(time.Millisecond)/int64(time.Nanosecond)), 10)
 
@@ -410,12 +406,12 @@ func (cb *CHBTC) CancelOrder(id string, base string, quote string) error {
 
 // GetOrder 获取委托买单或卖单
 // id: 委托挂单号
-func (cb *CHBTC) GetOrder(id string, base string, quote string) (*model.CHBTCOrder, error) {
+func (z *ZB) GetOrder(id string, base string, quote string) (*model.ZBOrder, error) {
 	url := "method=getOrder"
-	url += "&accesskey=" + cb.AccessKey
+	url += "&accesskey=" + z.AccessKey
 	url += "&id=" + id
 	url += "&currency=" + quote + "_" + base
-	sign := cb.Sign(url)
+	sign := z.Sign(url)
 	url += "&sign=" + sign
 	url += "&reqTime=" + strconv.FormatInt(time.Now().UnixNano()/(int64(time.Millisecond)/int64(time.Nanosecond)), 10)
 
@@ -435,7 +431,7 @@ func (cb *CHBTC) GetOrder(id string, base string, quote string) (*model.CHBTCOrd
 
 	log.Debugf("Response body: %v", string(body))
 
-	return &model.CHBTCOrder{
+	return &model.ZBOrder{
 		Currency:    gjson.GetBytes(body, "currency").String(),
 		Fees:        gjson.GetBytes(body, "fees").Float(),
 		ID:          gjson.GetBytes(body, "id").String(),
@@ -451,13 +447,13 @@ func (cb *CHBTC) GetOrder(id string, base string, quote string) (*model.CHBTCOrd
 }
 
 // GetOrders 获取多个委托买单或卖单, 每次请求返回 10 条记录
-func (cb *CHBTC) GetOrders(tradeType int, base string, quote string, pageIndex int) ([]*model.CHBTCOrder, error) {
+func (z *ZB) GetOrders(tradeType int, base string, quote string, pageIndex int) ([]*model.ZBOrder, error) {
 	url := "method=getOrders"
-	url += "&accesskey=" + cb.AccessKey
+	url += "&accesskey=" + z.AccessKey
 	url += "&tradeType=" + strconv.Itoa(tradeType)
 	url += "&currency=" + quote + "_" + base
 	url += "&pageIndex=" + strconv.Itoa(pageIndex)
-	sign := cb.Sign(url)
+	sign := z.Sign(url)
 	url += "&sign=" + sign
 	url += "&reqTime=" + strconv.FormatInt(time.Now().UnixNano()/(int64(time.Millisecond)/int64(time.Nanosecond)), 10)
 
@@ -477,9 +473,9 @@ func (cb *CHBTC) GetOrders(tradeType int, base string, quote string, pageIndex i
 
 	log.Debugf("Response body: %v", string(body))
 
-	var orders []*model.CHBTCOrder
+	var orders []*model.ZBOrder
 	gjson.ParseBytes(body).ForEach(func(k, v gjson.Result) bool {
-		orders = append(orders, &model.CHBTCOrder{
+		orders = append(orders, &model.ZBOrder{
 			Currency:    v.Get("currency").String(),
 			Fees:        v.Get("fees").Float(),
 			ID:          v.Get("id").String(),
@@ -500,14 +496,14 @@ func (cb *CHBTC) GetOrders(tradeType int, base string, quote string, pageIndex i
 }
 
 // GetOrdersNew (新)获取多个委托买单或卖单，每次请求返回pageSize<100条记录
-func (cb *CHBTC) GetOrdersNew(tradeType int, base string, quote string, pageIndex int, pageSize int) ([]*model.CHBTCOrder, error) {
+func (z *ZB) GetOrdersNew(tradeType int, base string, quote string, pageIndex int, pageSize int) ([]*model.ZBOrder, error) {
 	url := "method=getOrdersNew"
-	url += "&accesskey=" + cb.AccessKey
+	url += "&accesskey=" + z.AccessKey
 	url += "&tradeType=" + strconv.Itoa(tradeType)
 	url += "&currency=" + quote + "_" + base
 	url += "&pageIndex=" + strconv.Itoa(pageIndex)
 	url += "&pageSize=" + strconv.Itoa(pageSize)
-	sign := cb.Sign(url)
+	sign := z.Sign(url)
 	url += "&sign=" + sign
 	url += "&reqTime=" + strconv.FormatInt(time.Now().UnixNano()/(int64(time.Millisecond)/int64(time.Nanosecond)), 10)
 
@@ -527,9 +523,9 @@ func (cb *CHBTC) GetOrdersNew(tradeType int, base string, quote string, pageInde
 
 	log.Debugf("Response body: %v", string(body))
 
-	var orders []*model.CHBTCOrder
+	var orders []*model.ZBOrder
 	gjson.ParseBytes(body).ForEach(func(k, v gjson.Result) bool {
-		orders = append(orders, &model.CHBTCOrder{
+		orders = append(orders, &model.ZBOrder{
 			Currency:    v.Get("currency").String(),
 			Fees:        v.Get("fees").Float(),
 			ID:          v.Get("id").String(),
@@ -550,13 +546,13 @@ func (cb *CHBTC) GetOrdersNew(tradeType int, base string, quote string, pageInde
 }
 
 // GetOrdersIgnoreTradeType 与getOrdersNew的区别是取消tradeType字段过滤，可同时获取买单和卖单，每次请求返回pageSize<100条记录
-func (cb *CHBTC) GetOrdersIgnoreTradeType(base string, quote string, pageIndex int, pageSize int) ([]*model.CHBTCOrder, error) {
+func (z *ZB) GetOrdersIgnoreTradeType(base string, quote string, pageIndex int, pageSize int) ([]*model.ZBOrder, error) {
 	url := "method=getOrdersIgnoreTradeType"
-	url += "&accesskey=" + cb.AccessKey
+	url += "&accesskey=" + z.AccessKey
 	url += "&currency=" + quote + "_" + base
 	url += "&pageIndex=" + strconv.Itoa(pageIndex)
 	url += "&pageSize=" + strconv.Itoa(pageSize)
-	sign := cb.Sign(url)
+	sign := z.Sign(url)
 	url += "&sign=" + sign
 	url += "&reqTime=" + strconv.FormatInt(time.Now().UnixNano()/(int64(time.Millisecond)/int64(time.Nanosecond)), 10)
 
@@ -576,9 +572,9 @@ func (cb *CHBTC) GetOrdersIgnoreTradeType(base string, quote string, pageIndex i
 
 	log.Debugf("Response body: %v", string(body))
 
-	var orders []*model.CHBTCOrder
+	var orders []*model.ZBOrder
 	gjson.ParseBytes(body).ForEach(func(k, v gjson.Result) bool {
-		orders = append(orders, &model.CHBTCOrder{
+		orders = append(orders, &model.ZBOrder{
 			Currency:    v.Get("currency").String(),
 			Fees:        v.Get("fees").Float(),
 			ID:          v.Get("id").String(),
@@ -599,13 +595,13 @@ func (cb *CHBTC) GetOrdersIgnoreTradeType(base string, quote string, pageIndex i
 }
 
 // GetUnfinishedOrdersIgnoreTradeType 获取未成交或部份成交的买单和卖单，每次请求返回pageSize<=100条记录
-func (cb *CHBTC) GetUnfinishedOrdersIgnoreTradeType(base string, quote string, pageIndex int, pageSize int) ([]*model.CHBTCOrder, error) {
+func (z *ZB) GetUnfinishedOrdersIgnoreTradeType(base string, quote string, pageIndex int, pageSize int) ([]*model.ZBOrder, error) {
 	url := "method=getUnfinishedOrdersIgnoreTradeType"
-	url += "&accesskey=" + cb.AccessKey
+	url += "&accesskey=" + z.AccessKey
 	url += "&currency=" + quote + "_" + base
 	url += "&pageIndex=" + strconv.Itoa(pageIndex)
 	url += "&pageSize=" + strconv.Itoa(pageSize)
-	sign := cb.Sign(url)
+	sign := z.Sign(url)
 	url += "&sign=" + sign
 	url += "&reqTime=" + strconv.FormatInt(time.Now().UnixNano()/(int64(time.Millisecond)/int64(time.Nanosecond)), 10)
 
@@ -625,9 +621,9 @@ func (cb *CHBTC) GetUnfinishedOrdersIgnoreTradeType(base string, quote string, p
 
 	log.Debugf("Response body: %v", string(body))
 
-	var orders []*model.CHBTCOrder
+	var orders []*model.ZBOrder
 	gjson.ParseBytes(body).ForEach(func(k, v gjson.Result) bool {
-		orders = append(orders, &model.CHBTCOrder{
+		orders = append(orders, &model.ZBOrder{
 			Currency:    v.Get("currency").String(),
 			Fees:        v.Get("fees").Float(),
 			ID:          v.Get("id").String(),
@@ -654,11 +650,11 @@ func (cb *CHBTC) GetUnfinishedOrdersIgnoreTradeType(base string, quote string, p
 //   * ltc: LTC
 //   * eth: 以太币
 //   * etc: ETC币
-func (cb *CHBTC) GetWithdrawAddress(currency string) (string, error) {
+func (z *ZB) GetWithdrawAddress(currency string) (string, error) {
 	url := "method=getWithdrawAddress"
-	url += "&accesskey=" + cb.AccessKey
+	url += "&accesskey=" + z.AccessKey
 	url += "&currency=" + currency
-	sign := cb.Sign(url)
+	sign := z.Sign(url)
 	url += "&sign=" + sign
 	url += "&reqTime=" + strconv.FormatInt(time.Now().UnixNano()/(int64(time.Millisecond)/int64(time.Nanosecond)), 10)
 

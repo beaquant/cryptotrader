@@ -84,5 +84,54 @@
 * SWIFT Code, IBAN 和 Routing Number 都是银行国际电汇编码的一种, 只是使用地区不同而已.
 * 美国和北美地区的银行一般使用 Routing Number, 欧洲的银行(尤其是德国)使用 IBAN, 北美和欧洲以外的国家和地区, 大多使用 SWIFTCODE. 中国的银行就使用 SWIFT CODE, 实际上, SWIFTCODE 的功用等同于北美的 ROUTING Number, 只不过 SWIFTCODE 在国际上使用得更为普遍.
 
+## Symbol
+* 代号, 股票代码, 通常简写为代号, 是一个证券的特有缩写, 以便它可以很容易地在交易中被确认.
+
+## Order Type
+* 订单类型, 您的订单类型指已应用于您交易的规格, 取决于你下单的是一个市价单(market), 限价单(limit), 止损限价单(stop limit)或跟踪止损单(trailing stop trade).
+
+## Limit Price
+* 限价, 如果您设置一个限价, 您要求的执行价格被称为限价. 买入限价单将被按照这个价格或更低价格执行. 卖出限价单将以这个价格或更高价格执行.
+
+## Stop Price
+* 止损价, 如果您设置一个停止订单, 该订单价格将触发并成为市价单, 称为止损价格. 买入止损订单将按照此价格或更高的价格被执行. 卖出止损单将按照该价格或更低价格被执行. 追踪止损的价格将实时显示.
+
+## Stop Trigger Price
+* 停止触发价格, 触发价是由用户提前设定的, 作为进入, 出口点. 一旦一个股票的市价达到由用户设定的触发价, 止损单(stop order)将成为一个市价单(market order).
+
+## TIF, Time In Force
+* 股票交易的时间, 允许您设置一个过期日期和时间, 将您的订单保持活跃.
+
+## GTD
+* `Good-til-Date/Time`, 到日期/到时间前有效定单, 有效时间让您选择一个定单保持继续工作直到截止的日期和时间. 如果需要进行详细设置的话, 则这个属性需要对 GTD 的日期和时间两者进行设置, 包括在到期日区域内输入一个日期, 和在到期时间区域内输入一个时间.
+
+## IOC
+* Immediate Or Cancel Order, 立刻执行或取消定单, 应用于定单的立刻执行或取消(IOC)有效时间命令定单任何未立刻执行的部分将被取消.
+
+## CCI
+* Commodity Channel Index, 顺势指标, 是由美国股市分析家唐纳德·蓝伯特(Donald Lambert)所创造的, 是一种重点研判股价偏离度的股市分析工具.
+* <http://wiki.mbalib.com/wiki/%E9%A1%BA%E5%8A%BF%E6%8C%87%E6%A0%87>
+
+## MACD
+* Moving Average Convergence Divergence, 平滑异同移动平均线, 也称移动平均聚散指标.
+* 是查拉尔·阿佩尔(Geral Appel)于 1979 年提出的, 由一快及一慢指数移动平均 (EMA) 之间的差计算出来. "快"指短时期的EMA, 而"慢"则指长时期的 EMA.
+
+## RSI
+* Relative Strength Index, 相对强弱指标.
+* 通过比较一段时期内的平均收盘涨数和平均收盘跌数来分析市场买沽盘的意向和实力, 从而作出未来市场的走势.
+
+## SAR
+* Stop and Reveres, SAR / The Parabolic Time/Price System, 抛物线转向.
+* 抛物线转向(SAR)也称停损点转向, 其全称叫 "Stop and Reveres", 缩写 "SAR", 是由美国技术分析大师威尔斯·威尔德（Wells Wilder）所创造的，是一种简单易学、比较准确的中短期技术分析工具。
+
+## EMA
+* Exponential Moving Average, EXPMA, 指数平均数指标.
+* 它也是一种趋向类指标, 其构造原理是仍然对价格收盘价进行算术平均, 并根据计算结果来进行分析, 用于判断价格未来走势的变动趋势.
+
+## 有价证券
+* Negotiable securities/Valuable papers
+* 包括股票和债券.
+* 代替性证券, 替代性证券.
+
 ## Refs
 * [MBAlib](http://wiki.mbalib.com/wiki/)
