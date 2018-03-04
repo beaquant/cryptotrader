@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/Akagi201/cryptotrader/allcoin"
+	"github.com/Akagi201/cryptotrader/bigone"
 	"github.com/Akagi201/cryptotrader/binance"
 	"github.com/Akagi201/cryptotrader/bitfinex"
 	"github.com/Akagi201/cryptotrader/bitflyer"
@@ -14,10 +15,12 @@ import (
 	"github.com/Akagi201/cryptotrader/coinegg"
 	"github.com/Akagi201/cryptotrader/etherscan"
 	"github.com/Akagi201/cryptotrader/fixer"
+	"github.com/Akagi201/cryptotrader/gateio"
 	"github.com/Akagi201/cryptotrader/huobi"
 	"github.com/Akagi201/cryptotrader/lbank"
 	"github.com/Akagi201/cryptotrader/liqui"
 	"github.com/Akagi201/cryptotrader/okcoin"
+	"github.com/Akagi201/cryptotrader/okex"
 	"github.com/Akagi201/cryptotrader/poloniex"
 	"github.com/Akagi201/cryptotrader/zb"
 	"github.com/davecgh/go-spew/spew"
@@ -250,7 +253,7 @@ func main() {
 		log.Infof("Get ticker: %+v", ticker)
 	}
 
-	{
+	if false {
 		rc := binance.New("", "")
 
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -292,7 +295,7 @@ func main() {
 			log.Infof("Binance Server time: %v", serverTime)
 		}
 
-		{
+		if false {
 			nulsDepth, err := rc.GetDepth(ctx, "nuls", "btc", 0)
 			if err != nil {
 				log.Fatalf("Get NULS depth failed, err: %v", err)
@@ -398,6 +401,160 @@ func main() {
 			}
 
 			log.Infof("Get my ZRX trades: %+v", zrxTrades)
+		}
+	}
+
+	{
+		// OKEX
+		c := okex.New("", "")
+
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		if false {
+			ethTicker, err := c.GetTicker(ctx, "eth", "btc")
+			if err != nil {
+				log.Fatalf("OKEX get eth-btc ticker failed, err: %v", err)
+			}
+
+			log.Infof("OKEX ETH-BTC Ticker: %+v", ethTicker)
+		}
+
+		if false {
+			ethDepth, err := c.GetDepth(ctx, "eth", "btc")
+			if err != nil {
+				log.Fatalf("OKEX get eth-btc depth failed, err: %v", err)
+			}
+
+			log.Infof("OKEX ETH-BTC depth: %+v", ethDepth)
+		}
+
+		if false {
+			ethTrades, err := c.GetTrades(ctx, "eth", "btc")
+			if err != nil {
+				log.Fatalf("OKEX get eth-btc trades failed, err: %v", err)
+			}
+
+			log.Infof("OKEX ETH-BTC trades: %+v", ethTrades)
+		}
+
+		if false {
+			ethKline, err := c.GetRecords(ctx, "eth", "btc", "1min", 0, 0)
+			if err != nil {
+				log.Fatalf("OKEX get eth-btc kline failed, err: %v", err)
+			}
+
+			log.Infof("OKEX ETH-BTC kline: %+v", ethKline)
+		}
+
+		{
+			balance, err := c.GetAccount(ctx)
+			if err != nil {
+				log.Fatalf("OKEX get balance failed, err: %v", err)
+			}
+			log.Infof("OKEX balance: %+v", balance)
+		}
+	}
+
+	if false {
+		// gate.io
+		c := gateio.New("", "")
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		if false {
+			pairs, err := c.GetPairs(ctx)
+			if err != nil {
+				log.Fatalf("gate.io get pairs failed, err: %v", err)
+			}
+
+			log.Infof("gate.io pairs: %+v", pairs)
+		}
+
+		if false {
+			marketInfo, err := c.GetMarketInfo(ctx)
+			if err != nil {
+				log.Fatalf("gate.io get market_info failed, err: %v", err)
+			}
+
+			log.Infof("gate.io market_info: %+v", marketInfo)
+		}
+
+		{
+			ethTicker, err := c.GetTicker(ctx, "eth", "btc")
+			if err != nil {
+				log.Fatalf("gate.io get ticker failed, err: %v", err)
+			}
+
+			log.Infof("gate.io get ticker eth-btc: %+v", ethTicker)
+		}
+	}
+
+	if false {
+		// big.one
+		c := bigone.New("")
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		if false {
+			ethTicker, err := c.GetTicker(ctx, "eth", "btc")
+			if err != nil {
+				log.Fatalf("big.one get ticker failed, err: %v", err)
+			}
+
+			log.Infof("big.one get ticker eth-btc: %+v", ethTicker)
+		}
+
+		if false {
+			ethBook, err := c.GetDepth(ctx, "eth", "btc")
+			if err != nil {
+				log.Fatalf("big.one get eth-btc depth failed, err: %v", err)
+			}
+
+			log.Infof("big.one get depth eth-btc: %+v", ethBook)
+		}
+
+		if false {
+			ethTrade, err := c.GetTrades(ctx, "eth", "btc")
+			if err != nil {
+				log.Fatalf("big.one get eth-btc trade failed, err: %v", err)
+			}
+
+			log.Infof("big.one get trade eth-btc: %+v", ethTrade)
+		}
+
+		if false {
+			id, err := c.Trade(ctx, "eth", "btc", "BID", 0.1, 0.04)
+			if err != nil {
+				log.Fatalf("big.one trade eth-btc failed, err: %v", err)
+			}
+			log.Infof("big.one trade eth-btc success, order id: %v", id)
+
+			order, err := c.GetOrder(ctx, "eth", "btc", id)
+			if err != nil {
+				log.Fatalf("big.one get order eth-btc failed, err: %v", err)
+			}
+			log.Infof("big.one get order eth-btc success, order id: %v", order)
+
+			orders, err := c.GetOrders(ctx, "eth", "btc", 10)
+			if err != nil {
+				log.Fatalf("big.one get orders eth-btc failed, err: %v", err)
+			}
+			log.Infof("big.one get orders eth-btc success, orders: %+v", orders)
+
+			err = c.CancelOrder(ctx, "eth", "btc", id)
+			if err != nil {
+				log.Fatalf("big.one cancel order eth-btc failed, err: %v", err)
+			}
+			log.Info("big.one cancel order eth-btc success")
+		}
+
+		if false {
+			balance, err := c.GetAccount(ctx)
+			if err != nil {
+				log.Fatalf("big.one get balance failed, err: %v", err)
+			}
+			log.Infof("big.one get balance: %+v", balance)
 		}
 	}
 }
