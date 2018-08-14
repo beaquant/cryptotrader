@@ -13,6 +13,7 @@ import (
 	"github.com/Akagi201/cryptotrader/cex"
 	"github.com/Akagi201/cryptotrader/coincheck"
 	"github.com/Akagi201/cryptotrader/coinegg"
+	"github.com/Akagi201/cryptotrader/eosforce"
 	"github.com/Akagi201/cryptotrader/etherscan"
 	"github.com/Akagi201/cryptotrader/fixer"
 	"github.com/Akagi201/cryptotrader/gateio"
@@ -22,6 +23,7 @@ import (
 	"github.com/Akagi201/cryptotrader/okcoin"
 	"github.com/Akagi201/cryptotrader/okex"
 	"github.com/Akagi201/cryptotrader/poloniex"
+	"github.com/Akagi201/cryptotrader/util"
 	"github.com/Akagi201/cryptotrader/zb"
 	"github.com/davecgh/go-spew/spew"
 	log "github.com/sirupsen/logrus"
@@ -254,18 +256,19 @@ func main() {
 	}
 
 	if false {
-		rc := binance.New("", "")
+		// binance
+		rc := binance.New("xBhrsdymp92w3yTIf20x2TOs39fyyCM4TgeJCtbKuWQe1Rx2nCh2y6rDl1G5u5Th", "bC08CbIl5wBfVYJgrGkYgSl8dJ6JXVoqT57uLTstYyOj9ZUwo8r3dejHdonToiVw")
 
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 
 		if false {
-			zrxTicker, err := rc.GetTicker(ctx, "zrx", "btc")
+			ethTicker, err := rc.GetTicker(ctx, "eth", "btc")
 			if err != nil {
-				log.Fatalf("Binance get ticker failed, err: %v", err)
+				log.Fatalf("Binance get ETH-BTC ticker failed, err: %v", err)
 			}
 
-			log.Infof("ZRX Ticker: %+v", zrxTicker)
+			log.Infof("ETH-BTC Ticker: %+v", ethTicker)
 		}
 
 		if false {
@@ -340,11 +343,12 @@ func main() {
 			log.Infof("Get book tickers: %+v", bookTickers)
 		}
 
-		if false {
+		{
 			account, err := rc.GetAccount(ctx, 0)
 			if err != nil {
 				log.Fatalf("Get account failed, err: %v", err)
 			}
+			account = util.GetNonZeroBalance(account)
 
 			log.Infof("Get account: %+v", account)
 		}
@@ -404,7 +408,7 @@ func main() {
 		}
 	}
 
-	{
+	if false {
 		// OKEX
 		c := okex.New("", "")
 
@@ -555,6 +559,48 @@ func main() {
 				log.Fatalf("big.one get balance failed, err: %v", err)
 			}
 			log.Infof("big.one get balance: %+v", balance)
+		}
+	}
+
+	{
+		c := eosforce.New([]string{"docker", "exec", "eosforce", "cleos"}, "https", "w2.eosforce.cn")
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		{
+			available, err := c.GetAvailable(ctx, "blockgw")
+			if err != nil {
+				log.Fatalf("eosforce get available balance failed, err: %v", err)
+			}
+
+			log.Infof("eosforce available balance: %+v", available)
+		}
+
+		{
+			staked, err := c.GetStaked(ctx, "kuso", "blockgw")
+			if err != nil {
+				log.Fatalf("eosforce get staked balance failed, err: %v", err)
+			}
+
+			log.Infof("eosforce staked balance: %+v", staked)
+		}
+
+		{
+			staked, err := c.GetUnstaking(ctx, "kuso", "blockgw")
+			if err != nil {
+				log.Fatalf("eosforce get unstaking balance failed, err: %v", err)
+			}
+
+			log.Infof("eosforce unstaking balance: %+v", staked)
+		}
+
+		{
+			reward, err := c.GetRewards(ctx, "kuso", "blockgw")
+			if err != nil {
+				log.Fatalf("eosforce get reward balance failed, err: %v", err)
+			}
+
+			log.Infof("eosforce reward balance: %+v", reward)
 		}
 	}
 }
